@@ -7,14 +7,20 @@ import '../../dtos/artist_dto.dart';
 import 'artist_repository.dart';
 
 class ArtistRepositoryFirebase implements ArtistRepository {
+  List<Artist>? _cachedArtists;
+
   final Uri artistsUri = Uri.https(
     'week-8-34ffb-default-rtdb.asia-southeast1.firebasedatabase.app',
     '/artists.json',
   );
 
   @override
-  Future<List<Artist>> fetchArtists() async {
+  Future<List<Artist>> fetchArtists({bool forceFetch = false}) async {
     final http.Response response = await http.get(artistsUri);
+    
+    if (!forceFetch && _cachedArtists != null) {
+      return _cachedArtists!;
+    }
 
     if (response.statusCode == 200) {
       // 1 - Send the retrieved list of songs
@@ -24,6 +30,8 @@ class ArtistRepositoryFirebase implements ArtistRepository {
       for (final entry in songJson.entries) {
         result.add(ArtistDto.fromJson(entry.key, entry.value));
       }
+
+      _cachedArtists = result;
       return result;
     } else {
       // 2- Throw expcetion if any issue
@@ -33,4 +41,8 @@ class ArtistRepositoryFirebase implements ArtistRepository {
 
   @override
   Future<Artist?> fetchArtistById(String id) async {}
+
+  void clearCache() {
+    _cachedArtists = null;
+  }
 }
